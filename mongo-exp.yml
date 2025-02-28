@@ -1,0 +1,78 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mongo-exp
+  labels:
+    app: nginx
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      col: blk
+  template:
+    metadata:
+      labels:
+        col: blk
+    spec:
+      containers:
+      - name: mongo-exp
+        image: mongo-express
+        ports:
+        - containerPort: 8081
+        env:
+
+          - name: ME_CONFIG_MONGODB_ADMINUSERNAME
+
+            valueFrom:
+              secretKeyRef:
+                name: mongo-secret
+                key: user-db
+
+          - name: ME_CONFIG_MONGODB_ADMINPASSWORD
+
+            valueFrom:
+              secretKeyRef:
+                name: mongo-secret
+                key: pass-db
+
+          - name: ME_CONFIG_BASICAUTH_USERNAME
+
+            valueFrom:
+              secretKeyRef:
+                name: mongo-secret
+                key: user-exp
+
+          - name: ME_CONFIG_BASICAUTH_PASSWORD
+
+            valueFrom:
+              secretKeyRef:
+                name: mongo-secret
+                key: pass-exp
+
+          - name: ME_CONFIG_MONGODB_SERVER
+
+            valueFrom:
+              configMapKeyRef:
+                name: mongo-configmap
+                key: url-exp
+
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: my-service
+spec:
+  type: NodePort
+  selector:
+    col: blk
+  ports:
+    - port: 8081
+      # By default and for convenience, the `targetPort` is set to
+      # the same value as the `port` field.
+      targetPort: 8081
+      # Optional field
+      # By default and for convenience, the Kubernetes control plane
+      # will allocate a port from a range (default: 30000-32767)
+      nodePort: 30007
